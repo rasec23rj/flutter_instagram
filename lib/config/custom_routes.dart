@@ -12,6 +12,13 @@ class CustomRouter {
       case ScreensSlash.routeName:
         return ScreensSlash.route();
         break;
+      case LoginScreen.routeName:
+        return LoginScreen.route();
+        break;
+      case NavScreen.routeName:
+        return NavScreen.route();
+        break;
+
       default:
         return _errorRoute();
     }
