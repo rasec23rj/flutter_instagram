@@ -1,6 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_instagram/repository/auth/auth_repository.dart';
+import 'package:flutter_instagram/screens/login/cubit/login_cubit.dart';
 
 class LoginScreen extends StatelessWidget {
   static const String routeName = '/login';
@@ -9,7 +12,10 @@ class LoginScreen extends StatelessWidget {
     return PageRouteBuilder(
       settings: const RouteSettings(name: routeName),
       transitionDuration: Duration(seconds: 0),
-      pageBuilder: (_, __, ___) => LoginScreen(),
+      pageBuilder: (context, __, ___) => BlocProvider<LoginCubit>(
+          create: (_) =>
+              LoginCubit(authRepository: context.read<AuthRepository>()),
+          child: LoginScreen()),
     );
   }
 
@@ -17,11 +23,23 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        onWillPop: () async => false,
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Scaffold(
-            resizeToAvoidBottomInset: true,
+      onWillPop: () async => false,
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: BlocConsumer<LoginCubit, LoginState>(listener: (context, state) {
+          print('BlocConsumer ${state.status}');
+          if (state.status == LoginStatus.error) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Error'),
+                content: Text('context'),
+              ),
+            );
+          }
+        }, builder: (context, state) {
+          return Scaffold(
+            resizeToAvoidBottomInset: false,
             body: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Center(
@@ -51,33 +69,44 @@ class LoginScreen extends StatelessWidget {
                             decoration: InputDecoration(
                                 hintText: 'Email',
                                 prefixIcon: Icon(Icons.email)),
-                            onChanged: (value) => print(value),
+                            onChanged: (value) =>
+                                context.read<LoginCubit>().emailChanged(value),
                             validator: (value) => !value.contains('@')
-                                ? 'O email é obrigatorio'
+                                ? 'O email é obrigatorio e deve conter @'
                                 : null,
                           ),
                           const SizedBox(height: 12.0),
                           TextFormField(
+                              obscureText: true,
                               decoration: InputDecoration(
                                   hintText: 'Senha',
                                   prefixIcon: Icon(Icons.vpn_key)),
-                              onChanged: (value) => print(value),
+                              onChanged: (value) => context
+                                  .read<LoginCubit>()
+                                  .passwordChanged(value),
+                              // ignore: missing_return
                               validator: (value) {
-                                value.isEmpty ? 'O senha é obrigatorio' : null;
-                                value.length < 6
-                                    ? ' O tamanho minimo e de 6'
-                                    : null;
+                                if (value.isEmpty) {
+                                  return 'O senha é obrigatorio';
+                                }
+                                if (value.length < 6) {
+                                  return 'O tamanho minimo e de 6';
+                                }
                               }),
                           const SizedBox(
                             height: 28.0,
                           ),
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              print('save ${state.status}');
+                              _submitForm(context,
+                                  state.status == LoginStatus.submitting);
+                            },
                             icon: Icon(Icons.save),
                             label: Text('Login'),
                           ),
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () => {},
                             icon: Icon(Icons.add_box_sharp),
                             label: Text('Criar Conta'),
                           )
@@ -88,7 +117,15 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ));
+          );
+        }),
+      ),
+    );
+  }
+
+  void _submitForm(BuildContext context, isSubmitting) {
+    if (_formKey.currentState.validate() && !isSubmitting) {
+      context.read<LoginCubit>().logInWithCredentials();
+    }
   }
 }

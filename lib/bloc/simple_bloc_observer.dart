@@ -9,13 +9,11 @@ class SimpleBlocObserver extends BlocObserver {
 
   @override
   void onTransition(Bloc bloc, Transition transition) {
-    print(transition);
     super.onTransition(bloc, transition);
   }
 
   @override
-  Future<void> onError(BlocBase bloc, Object error, StackTrace stackTrace) {
-    print(error);
-    super.onError(bloc, error, stackTrace);
+  Future<void> onError(_, Object error, StackTrace stackTrace) async {
+    super.onError(_, error, stackTrace);
   }
 }
